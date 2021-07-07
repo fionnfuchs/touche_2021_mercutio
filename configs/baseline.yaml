@@ -1,0 +1,35 @@
+pipeline:
+  - "chat_noir"
+  - "cleaning"
+  - "remerging"
+  - "pickling"
+
+chat_noir:
+  # enables the cache
+  is_caching_enabled: true
+  # filename of the cache results from the chat noir requests
+  cache_filename: "cache/chat_noir_cache.pkl"
+  # number of query retrying on receiving errors
+  number_of_query_retries: 4
+  # number of documents to retrieve per query
+  docs_per_query: 100
+  # all documents with a score lower than this, are going to be ignored, if = -1, this is not going to be used at all
+  score_threshold: -1
+  # all documents with a spam rank higher than this, are going to be ignored, if = -1, this is not going to be used at all
+  spam_threshold: -1
+  # all documents with a page rank lower than this are going to be ignored, if = -1, this is not going to be used at all
+  page_rank_treshold: -1
+
+remerging:
+  spam_rank: 0
+  page_rank: 0
+  score: 1
+
+dir:
+  topic_input: "./material"
+  qrels_input: "./material"
+
+  # run_name to give a specific pipeline "run" a distinct name
+  # works like a version specifier
+  # the name of the evaluation files and the cache files depend on this name
+  run_name: "baseline"

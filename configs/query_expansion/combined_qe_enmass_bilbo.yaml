@@ -1,0 +1,133 @@
+pipeline:
+  - "query_expansion"
+  - "chat_noir"
+  - "cleaning"
+    #- "simple_term_ranking"
+    #- "classifier_ranking"
+  - "remerging"
+  - "pickling"
+
+chat_noir:
+  # enables the cache
+  is_caching_enabled: true
+  # filename of the cache results from the chat noir requests
+  cache_filename: "cache/chat_noir_cache.pkl"
+  # number of query retrying on receiving errors
+  number_of_query_retries: 4
+  # number of documents to retrieve per query
+  docs_per_query: 100
+  # all documents with a score lower than this, are going to be ignored, if = -1, this is not going to be used at all
+  score_threshold: -1
+  # all documents with a spam rank higher than this, are going to be ignored, if = -1, this is not going to be used at all
+  spam_threshold: -1
+  # all documents with a page rank lower than this are going to be ignored, if = -1, this is not going to be used at all
+  page_rank_treshold: -1
+
+query_expansion:
+  enabled: true
+
+  # choose from:
+  # "en_mass" - retrieves the "nearest" synonym for ever noun/ajdective/verb and creates new queries with only one word changed to the synonym
+  # "only_nouns" - uses queries only with nouns and synonyms of these nouns
+  # "bilbo_baggins" use bilbo baggins approach (4 queries)
+  # "masked_model_expansion" uses a self trained masked BERT model to retrieve similar words, this mode is not included in the "combine_all" mode
+  # "text_generation" creates a text with a text-generation model, extracts the nouns and uses these nouns in the query
+  #
+  # this string can also be a comma-seperated list of the modes to combine multiple query expansion modes
+  #mode: "bilbo_baggins"
+  mode: "en_mass,bilbo_baggins"
+
+  # whether or not include the default query
+  # this flag is usefull to test the expansion modes as 'raw' modes
+  use_default_query_everytime: true
+
+  # source of synonyms
+  # this option is only relevant for the following query expansion modes: en_mass, only_nouns, bilbo_baggins, combine_all
+  # Options:
+  #   - pretrained_gensim (pretrained word-to-vec model)
+  #   - selftrained_w2v   (self-trained word-to-vec model)
+  synonym_source: "pretrained_gensim"
+  #synonym_source: "selftrained_w2v"
+
+  # minimal levenshtein distance between two words to be considered a synonym and not another form of the same word
+  min_levensthein_distance: 2
+
+  # for retrieving synonyms with w2v context words can be used to find better semantical-matching synonyms
+  # this value specifies how many additional context words should be used to find the synonyms
+  # this value can be at max the value of 'max_number_of_synonyms'
+  number_of_additional_context_words: 0
+
+  # specifies the max number of synonyms found for the synonym-related expansion modes
+  # trivially, more synonyms => more queries (at least for some modes like 'en_mass')
+  max_number_of_synonyms: 2
+
+  # the name of the model to be used for pretrained w2v
+  # this option is not relevant when using selftrained w2v model
+  # possible models are:
+  #   - word2vec-google-news-300
+  #   - fasttext-wiki-news-subwords-300
+  #   - glove-twitter-300 (or glove-twitter-25 - which is smaller/ faster to load and nice for testing purposes)
+  #   - conceptnet-numberbatch-17-06-300
+  #   - glove-wiki-gigaword-300 -> is currently the best one
+  #gensim_model_name : "glove-twitter-25"
+  gensim_model_name : "glove-wiki-gigaword-300"
+
+  # path to the masked language model or a pretrained model like 'roberta'
+  #masked_langue_model : "bert-base-uncased"
+  masked_langue_model : "roberta-base"
+  #masked_langue_model : "src/model-training/argsme-language-model/masked-language-model/argsme-BERT"
+
+  # the token that is used to replace words
+  # for bert = [MASK]
+  # for roberta = <mask>
+  masked_token : "<mask>"
+
+  # path to the text-generation model or a pretrained model like 'gpt2'
+  text_generation_model : "gpt2"
+  #text_generation_model : "material/query-expansion-models/argsme-language-model/text-generation-model/model"
+
+  # If set to true, the first extracted feature is added after the query-question
+  use_text_generation_prefix : true
+
+  # path of the self-trained w2v model used for query expansion
+  # inside the '.../models/' folder are multiple models available
+  #path_w2v_trained_model : "material/query-expansion-models/domain-specific-w2v/models/argsme_large_200v-BOW-3c.model"
+  path_w2v_trained_model : "material/query-expansion-models/domain-specific-w2v/models/argsme_large_400v-BOW-3c.model"
+
+
+remerging:
+  spam_rank: 0.1
+  page_rank: 0.1
+  score: 1
+  simple_terms: 0.2
+  classifier: 2
+
+targer:
+  # Models for the TARGER API:
+  #  Combo -> Classifies input text to argument structure (Combo model - big dataset)  ---  !!! works kinda !!!
+  #  ES -> Classifies input text to argument structure (Essays model, fasttext embeddings) --- works kinda
+  #  ES_dep -> Classifies input text to argument structure (Essays model, dependency based)
+  #  IBM -> Classifies input text to argument structure (IBM model, fasttext - big dataset) works no errors
+  #  NewPE -> Classifies input text to argument structure (Essays model, fasttext embeddings) --- !!! DOES NOT WORK - 504 timed out !!!
+  #  NewWD -> Classifies input text to argument structure (Essays model, fasttext - big dataset) !!! DOES NOT WORK - 504 timed out !!!!
+  #  WD -> Classifies input text to argument structure (WebD model, fasttext - big dataset) --- works, but very low recognition ratings
+  #  WD_dep -> Classifies input text to argument structure (WebD model, dependency based)
+  model: "IBM"
+  # minimal confidence for the selected types as float
+  min_confidence: 0.8
+  # select for type of argumemt labels: claim, premise, both
+  arg_label: "both"
+  # default value for errors, if missing -1; normal value is between 0.0 (lowest in result) and 1.0 (highest possible result)
+  # 1 has no influence
+  error_default: 1.0
+  # True if (number of argument tagged words)/(number of words - punctuation), False (number of argument tagged words)/(number of words)
+  ignore_punctuation: true
+
+dir:
+  topic_input: "./material"
+  qrels_input: "./material"
+
+  # run_name to give a specific pipeline "run" a distinct name
+  # works like a version specifier
+  # the name of the evaluation files and the cache files depend on this name
+  run_name: "combined_qe_enmass_bilbo"

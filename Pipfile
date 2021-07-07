@@ -1,0 +1,30 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flake8 = "*"
+black = "*"
+
+[packages]
+pyyaml = "5.3.1"
+aiohttp = "3.7.3"
+beautifulsoup4 = "4.9.3"
+requests = "2.25.1"
+nltk = "3.5"
+numpy = "1.19.4"
+gensim = "3.8.3"
+spacy = "3.0.3"
+dataclasses-json = "0.5.2"
+python-levenshtein = "0.12.2"
+pandas = "1.2.2"
+transformers = "4.3.0"
+torch = "1.7.1"
+tensorflow = "2.4.1"
+
+[requires]
+python_version = "3.8"
+
+[pipenv]
+allow_prereleases = true
